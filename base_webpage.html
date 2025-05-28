@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advancing Compositional Awareness in CLIP with Efficient Fine-Tuning</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+</head>
+<body class="light-theme-theme">
+
+<div class="container">
+    <header>
+        <h1>Advancing Compositional Awareness in CLIP with Efficient Fine-Tuning</h1>
+        <div class="authors">
+            <span class="author">Amit Peleg*</span> &nbsp;
+            <span class="author">Naman Deep Singh*</span> &nbsp;
+            <span class="author">Matthias Hein</span>
+        </div>
+        <div class="institution">University of Tübingen and Tübingen AI Center</div>
+        <div class="contrib">* equal contribution</div>
+    </header>
+    <div class="platform-links">
+        <a href="https://huggingface.co/collections/nmndeep/clic-67e14ff257381859c374f596" target="_blank">
+            <img src="./assets/logos/huggingface.svg" alt="Hugging Face" width="120" height="50">
+        </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+        <a href="https://github.com/AmitPeleg/CLIC" target="_blank">
+            <img src="./assets/logos/Github_logo.png" alt="Github" width="100" height="40">
+        </a>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a href="https://arxiv.org/a/YOUR_PROFILE" target="_blank">
+            <img src="./assets/logos/arxiv-logo.svg" alt="arXiv" width="100" height="40">
+        </a>
+    </div>
+    <div class="teaser-container">
+        <img src="./assets/grouped_bar_plot.png" class="teaser-image"
+             title="CLIC improves differently pre-trained CLIP models" alt="CLIC teaser">
+        <h4>
+            Our fine-tuning scheme <b>CLIC</b> gives consistent improvements on both compositionality and retrieval
+            benchmarks for CLIP-like models, including
+            <span class="clip">CLIP</span><sup><a href="#clip">[1]</a></sup>,
+            <span class="clipa">CLIPA</span><sup><a href="#clipa">[2]</a></sup>,
+            <span class="eva-clip">EVA-CLIP</span><sup><a href="#eva-clip">[3]</a></sup> and
+            <span class="clips">CLIPS</span><sup><a href="#clips">[4]</a></sup>.
+            To the best of our knowledge,
+            <span class="clips">CLIPS</span><span class="clic">+CLIC</span> yields SOTA numbers on
+            SugarCrepe++<sup><a href="#sg++">[5]</a></sup> for CLIP-like models.
+        </h4>
+    </div>
+    <div class="abstract">
+        <h2>Abstract</h2>
+        <p>
+            Vision-language models like CLIP have demonstrated remarkable zero-shot capabilities in classification and
+            retrieval. However, these models often struggle with compositional reasoning &ndash; the ability to
+            understand the relationships between concepts. A recent benchmark, SugarCrepe++<sup><a href="#sg++">[5]</a></sup>,
+            reveals that previous
+            works on improving compositionality have mainly improved lexical sensitivity but neglected semantic
+            understanding. In addition, downstream retrieval performance often deteriorates, although one would expect
+            that improving compositionality should enhance retrieval. In this work, we introduce <b>CLIC</b>
+            (<b>C</b>ompositionally-aware <b>L</b>earning <b>i</b>n <b>C</b>LIP), a fine-tuning method based on a novel
+            training technique combining multiple images and their associated captions. <b>CLIC</b> improves
+            compositionality across architectures as well as differently pre-trained CLIP models, both in terms of
+            lexical and semantic understanding, and achieves consistent gains in retrieval performance. This even
+            applies to the recent CLIPS<sup><a href="#clips">[4]</a></sup>, which achieves SOTA retrieval performance.
+            Nevertheless, the short fine-tuning with <b>CLIC</b> leads to an improvement in retrieval and to the best
+            compositional CLIP model on SugarCrepe++.
+            All our models and code are available on <a href="https://github.com/AmitPeleg/CLIC"
+                                                        target="_blank">GitHub</a>.
+        </p>
+    </div>
+
+    <section>
+        <h2>How does CLIC work?</h2>
+        <p>
+            CLIC fine-tunes the text-encoder in CLIP models by leveraging already available high-quality captioned
+            datasets
+            like PixelProse<sup><a href="#pixpr">[6]</a></sup> or common text-image datasets like
+            Laion<sup><a href="#laion">[7]</a></sup>, which we recaption using CogVLM<sup><a href="#clvm">[8]</a></sup>.
+            Using a novel
+            technique of combining images and captions allows us to generate positives as well as hard-negatives with
+            minimal additional overhead, e.g., we do not require an LLM for generating hard-negatives, nor do we need to
+            generate synthetic images.
+        </p>
+        <h3>Data generation scheme for CLIC</h3>
+        <div class="teaser-container">
+            <img src="./assets/data_creation.png" class="teaser-image" alt="CLIC" width="100%">
+            <p>
+                For every image, we sample an additional image and concatenate the two.
+                This concatenated image is the input to the model alongside five captions: <br>
+                \(p_1\): a concatenation of the first sentence from each image. <br>
+                \(p_2\): a sentence-shuffled version of \(p_1\). <br>
+                \(p_3\) and \(p_4\): concatenations of two additional sentences from each caption. <br>
+                \(n\): a hard negative constructed by swapping one word from each sentence of \(p_1\).
+            </p>
+        </div>
+
+        <h2>What does CLIC offer?</h2>
+        <ul class="ticks">
+            <li> Improves compositionality with negligible decay in downstream zero-shot classification.
+            <li> Improves differently pre-trained CLIP-like models.
+            <li> Works with a variety of high-quality image-caption paired datasets.
+            <li> Consistent improvement in image and text-retrieval by fine-tuning on a small amount of data.
+        </ul>
+        <div class="deviation-container">
+            <img src="./assets/teaserplot_horizontal_4er.jpg" class="deviation-image" alt="CLIC">
+        </div>
+
+    </section>
+
+    <section>
+        <h2>Want to use compositionally aware CLIC models?</h2>
+        See <a href="https://huggingface.co/collections/nmndeep/clic-67e14ff257381859c374f596" target="_blank">CLIC-HuggingFace</a>.
+        Here is a sample code for CLIC fine-tuned CLIP-ViT-L-14 model.
+        <div class='codeblock'>
+            <pre>
+                <code class="language-python">
+
+        import torch
+        from PIL import Image
+        import open_clip
+
+        model, _, image_processor = open_clip.create_model_and_transforms('hf-hub:nmndeep/CLIC-ViT-L-14-224-PixelProse')
+        model.eval()
+
+        image = image_processor(Image.open(urlopen(
+            'IMAGE_URL'))).unsqueeze(0)
+
+        tokenizer = open_clip.get_tokenizer('hf-hub:nmndeep/CLIC-ViT-L-14-224-PixelProse')
+        texts= ["class1", "class2", "class3", "class4"]
+        text = tokenizer(texts)
+
+        with torch.no_grad(), torch.autocast("cuda"):
+            image_features = model.encode_image(image)
+            text_features = model.encode_text(text)
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            text_features /= text_features.norm(dim=-1, keepdim=True)
+
+            text_probs = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+        idx = torch.argmax(text_probs)
+        print("Output label:", texts[idx])
+
+                </code>
+            </pre>
+        </div>
+    </section>
+
+    <section>
+        <ol class="references">
+            <li id="clip">Radford et al. "Learning Transferable Visual Models From Natural Language Supervision." In <i>ICML</i>,
+                2021.
+            </li>
+            <li id="clipa">Li et al. "An Inverse Scaling Law for CLIP Training". In <i>NeurIPS</i>, 2023.
+            </li>
+            <li id="eva-clip">Sun et al. "Eva-clip: Improved training techniques for clip at scale" In <i>arXiv</i>,
+                2023.
+            </li>
+            <li id="clips">Liu et al. "Clips: An enhanced clip framework for learning with synthetic captions." In <i>arXiv</i>,
+                2024.
+            </li>
+            <li id="sg++">Dumpala et al., "Sugarcrepe++ dataset: Vision-language model sensitivity to semantic and
+                lexical alterations". In <i>NeurIPS</i>, 2024.
+            </li>
+            <li id="pixpr">Singla et al. "From pixels to prose: A large dataset of dense image captions" In <i>arXiv</i>,
+                2024.
+            </li>
+            <li id="laion">Schuhmann et al. "Laion-5b: An open large-scale dataset for training next generation
+                image-text models" In <i>NeurIPS</i>,
+                2022.
+            </li>
+            <li id="clvm">Wang et al. "Cogvlm: Visual expert for pretrained language models" In <i>NeurIPS</i>,
+                2024.
+            </li>
+        </ol>
+    </section>
+
+    <footer>
+        © 2025 <a
+            href="https://uni-tuebingen.de/fakultaeten/mathematisch-naturwissenschaftliche-fakultaet/fachbereiche/informatik/lehrstuehle/maschinelles-lernen/news/"
+            target="_blank">
+        Machine Learning Group, University of Tübingen</a>
+    </footer>
+</div>
+
+<script>
+    function toggleTheme() {
+        const body = document.body;
+        if (body.classList.contains('light-theme')) {
+            body.classList.remove('light-theme');
+            body.classList.add('dark-theme');
+        } else {
+            body.classList.remove('dark-theme');
+            body.classList.add('light-theme');
+        }
+    }
+</script>
+</body>
+</html>
